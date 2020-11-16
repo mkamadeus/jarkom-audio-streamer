@@ -59,21 +59,23 @@ stream = p.open(format = p.get_format_from_width(sampwidth),
 
 queue = []
 
+ptr = 0
+
 while(True):
     print("Hello from receiver")
     try:
         data, _ = sock.recvfrom(buffSize)
         typ, payload = lib.breakPacket(data)
 
-        if(typ == 0x3):
+        if(typ == "DATA"):
+            print("playdong")
             queue.append(payload)
+            stream.write(queue[ptr])
+            ptr += 1
     except:
         print("error")
 
     if(time.time() > timeout):
         break
-
-for a in queue:
-    stream.write(a)
 
 
