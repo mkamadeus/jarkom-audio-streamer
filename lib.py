@@ -3,13 +3,13 @@ import struct
 # Untuk tubes 2 modif aja deh jadi packetnya
 # type
 
-def createPacket(type, data):
+def createPacket(type, data, fin = 0):
     if(type == "META"):
         return (struct.pack(">bIII", 0x1, data[0], data[1], data[2]))
     elif(type == "SUB"):
         return (struct.pack(">bIII", 0x2, 0, 0, 0))
     else:
-        return (struct.pack(">bIII", 0x3, 0, 0, 0) + data)
+        return (struct.pack(">bIII", 0x3, 0, 0, fin) + data)
 
 def breakPacket(packet):
     typ, sampwidth, nchannel, framerate = struct.unpack(">bIII", packet[:13])
@@ -18,7 +18,10 @@ def breakPacket(packet):
     elif(typ == 0x2):
         return "SUB", ""
     else:
-        return "DATA", packet[13:]
+        if(framerate == 1):
+            return "DATA1", packet[13:]
+        else:
+            return "DATA", packet[13:]
 
 
 # def createPacket(type, length, seq, data):

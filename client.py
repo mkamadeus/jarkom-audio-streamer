@@ -5,11 +5,36 @@ import time
 import random
 import pyaudio
 import wave
+import queue
+from threading import Thread
+
+q = queue.Queue()
 
 #Input from user
 address = input("masukkan IP address server")
 port = int(input("masukkan port"))
 addr = (address, port)
+
+def Listener(sock, q):
+    run = True
+    while(run):
+        print("Listen for audio chunk")
+        try:
+            data, _ = sock.recvfrom(buffSize)
+            typ, payload = lib.breakPacket(data)
+
+            if(typ == "DATA"):
+                q.put(payload)
+            else:
+                print("tereter")
+                q.put(payload)
+                run = False
+                break
+        except:
+            print("error")
+
+        if(time.time() > timeout):
+            break
 
 buffSize = 32767 + 7
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) 
@@ -57,25 +82,14 @@ stream = p.open(format = p.get_format_from_width(sampwidth),
                 rate = framerate,
                 output = True)
 
-queue = []
 
-ptr = 0
+t = Thread(target = Listener, args = (sock, q))
+t.start()
 
-while(True):
-    print("Hello from receiver")
-    try:
-        data, _ = sock.recvfrom(buffSize)
-        typ, payload = lib.breakPacket(data)
+while True:
+    stream.write(q.get())
+    q.task_done()
 
-        if(typ == "DATA"):
-            print("playdong")
-            queue.append(payload)
-            stream.write(queue[ptr])
-            ptr += 1
-    except:
-        print("error")
 
-    if(time.time() > timeout):
-        break
 
 

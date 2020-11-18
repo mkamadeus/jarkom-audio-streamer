@@ -16,8 +16,6 @@ timeout = time.time() + 60 * 5
 def serverListener(receiver, metaPacket):
 
     while(True):
-        print("listnerer")
-        time.sleep(2)
         try:
             message, addr = receiver.recvfrom(buffSize)
             
@@ -68,6 +66,7 @@ data = wf.readframes(chunk)
 
 while data != b'':
     print("hehe")
+    time.sleep(0.07)
     dataPacket = lib.createPacket("DATA", data)
     for addr in subscribers:
         sendPacket(receiver, dataPacket, addr)
