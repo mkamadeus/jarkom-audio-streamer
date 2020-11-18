@@ -64,13 +64,31 @@ t.start()
 
 data = wf.readframes(chunk)
 
+chunks = []
+
 while data != b'':
-    print("hehe")
-    time.sleep(0.07)
-    dataPacket = lib.createPacket("DATA", data)
+    chunks.append(data)
+    data = wf.readframes(chunk)
+
+siz = len(chunks)
+
+time.sleep(3)
+
+delay = (60 * wf.getnframes()) / (100 * siz * wf.getframerate())
+
+print(delay)
+
+for i in range(siz):
+    time.sleep(delay)
+    print("packet pengiriman ke ", i)
+    dataPacket = b''
+    if(i == siz - 1):
+        dataPacket = lib.createPacket("DATA", chunks[i], 1)
+    else:
+        dataPacket = lib.createPacket("DATA", chunks[i])
     for addr in subscribers:
         sendPacket(receiver, dataPacket, addr)
-    data = wf.readframes(chunk)
+    
 
 
 
