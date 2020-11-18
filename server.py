@@ -74,12 +74,14 @@ siz = len(chunks)
 
 time.sleep(3)
 
-delay = (60 * wf.getnframes()) / (100 * siz * wf.getframerate())
+frameSize = metadata[0] * metadata[1] 
+frameCountPerChunk = chunk / frameSize 
 
-print(delay)
+chunkTime = 1000 * frameCountPerChunk / metadata[2]
+
 
 for i in range(siz):
-    time.sleep(delay)
+    startTime = time.time() * 1000
     print("packet pengiriman ke ", i)
     dataPacket = b''
     if(i == siz - 1):
@@ -88,6 +90,11 @@ for i in range(siz):
         dataPacket = lib.createPacket("DATA", chunks[i])
     for addr in subscribers:
         sendPacket(receiver, dataPacket, addr)
+
+    endTime = time.time() * 1000 
+    delta = endTime - startTime 
+    if(delta < chunkTime):
+        time.sleep((chunkTime - delta) / 1000)
     
 
 
