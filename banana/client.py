@@ -99,9 +99,9 @@ def play_audio(sampwidth: int, nchannel: int, framerate: int, q: queue.Queue):
                     output = True)
 
     while True:
-        v = q.get()
-        print(v)
-        stream.write(v)
+        # v = q.get()
+        # print(v)
+        stream.write(q.get())
         q.task_done()
         
 
