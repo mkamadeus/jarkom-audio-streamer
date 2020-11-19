@@ -1,1 +1,2 @@
 PyAudio==0.2.11
+PySimpleGUI==4.32.1
