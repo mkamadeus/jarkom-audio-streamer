@@ -1,10 +1,7 @@
 import socket 
-import sys 
 import lib
 import time
-import random
 import pyaudio
-import wave
 import queue
 from threading import Thread
 
@@ -15,7 +12,7 @@ address = input("masukkan IP address server")
 port = int(input("masukkan port"))
 addr = (address, port)
 
-def Listener(sock, q):
+def client_listener(sock, q):
     run = True
     while(run):
         print("Listen for audio chunk")
@@ -83,7 +80,7 @@ stream = p.open(format = p.get_format_from_width(sampwidth),
                 output = True)
 
 
-t = Thread(target = Listener, args = (sock, q))
+t = Thread(target = client_listener, args = (sock, q))
 t.start()
 
 while True:

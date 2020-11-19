@@ -1,18 +1,15 @@
 import socket 
-import sys 
 import lib
 import time
-import random
-import os
-import pyaudio
 import wave
 from threading import Thread
 
-buffSize = 32767 + 13
+buffSize = 32767 + 13 
 chunk = 1024
 subscribers = []
 timeout = time.time() + 60 * 5
 
+# Listener function for the server
 def serverListener(receiver, metaPacket):
 
     while(True):
