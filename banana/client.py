@@ -54,6 +54,8 @@ def subscribe(addr: Tuple[str, int], sock : socket.socket, q:queue.Queue, timeou
     sampwidth = 0
     nchannel = 0
     framerate = 0
+    frame_count = 0
+    filename = ''
 
     # Wait for META packet
     run = True
@@ -64,13 +66,13 @@ def subscribe(addr: Tuple[str, int], sock : socket.socket, q:queue.Queue, timeou
         try:
             fromreceiver, _ = sock.recvfrom(buff_size)
             typ, data = lib.breakPacket(fromreceiver)
-            print(typ)
-            print(data)
+
             if(typ == "META"):
                 sampwidth = data[0]
                 nchannel = data[1]
                 framerate = data[2]
-                print(framerate)
+                frame_count = data[3]
+                filename = data[4]
                 run = False
                 break
 
@@ -79,11 +81,13 @@ def subscribe(addr: Tuple[str, int], sock : socket.socket, q:queue.Queue, timeou
         except ConnectionResetError:
             print("No receiver detected, resending packet")
             time.sleep(1)
+        except:
+            print('other error')
 
         if(time.time() > timeout):
             break
 
-    return [sampwidth, nchannel, framerate]
+    return [sampwidth, nchannel, framerate, frame_count, filename]
 
 
 # Play Audio
@@ -99,8 +103,6 @@ def play_audio(sampwidth: int, nchannel: int, framerate: int, q: queue.Queue):
                     output = True)
 
     while True:
-        # v = q.get()
-        # print(v)
         stream.write(q.get())
         q.task_done()
         

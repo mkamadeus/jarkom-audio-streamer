@@ -15,9 +15,9 @@ def serverListener(receiver, metaPacket):
     while(True):
         try:
             message, addr = receiver.recvfrom(buffSize)
-            
+            print('pesan', message)
             typ, data = lib.breakPacket(message)
-
+            print(typ)
             if (typ == "SUB"):
                 print("sub baru nih")
                 receiver.sendto(metaPacket, addr)
@@ -52,9 +52,10 @@ print(socket.gethostbyname(socket.gethostname()))
 wf = wave.open(filename, 'rb')
 
 
-metadata = [wf.getsampwidth(), wf.getnchannels(), wf.getframerate()]
+metadata = [wf.getsampwidth(), wf.getnchannels(), wf.getframerate(), wf.getnframes(), filename]
 
 metaPacket = lib.createPacket("META", metadata)
+print('pisang', metaPacket)
 
 t = Thread(target = serverListener, args = (receiver, metaPacket))
 t.start()
@@ -79,7 +80,7 @@ chunkTime = 1000 * frameCountPerChunk / metadata[2]
 
 for i in range(siz):
     startTime = time.time() * 1000
-    print("packet pengiriman ke ", i)
+    # print("packet pengiriman ke ", i)
     dataPacket = b''
     if(i == siz - 1):
         dataPacket = lib.createPacket("DATA", chunks[i], 1)
