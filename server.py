@@ -57,7 +57,7 @@ metadata = [wf.getsampwidth(), wf.getnchannels(), wf.getframerate(), wf.getnfram
 metaPacket = lib.createPacket("META", metadata)
 print('pisang', metaPacket)
 
-t = Thread(target = serverListener, args = (receiver, metaPacket))
+t = Thread(target = serverListener, args = (receiver, metaPacket), daemon=True)
 t.start()
 
 data = wf.readframes(chunk)
