@@ -18,7 +18,7 @@ def start_client():
     sampwidth, nchannel, framerate, frame_count, filename = subscribe(addr, sock, q)
 
     window['-FILENAME-'].update(filename)
-    window['-LENGTH-'].update(frame_count//framerate)
+    window['-LENGTH-'].update('Loading...')
 
     listener_thread = Thread(target=client_listener, args=(sock,q), daemon=True)
     listener_thread.start()
@@ -31,16 +31,19 @@ layout = [
     [sg.Text(size=(15,1),key='-LENGTH-')]
 ]
 
-window = sg.Window('Audio Client', layout, finalize=True)
+try:
+    window = sg.Window('Audio Client', layout, finalize=True)
 
-audio_thread = Thread(target=start_client, daemon=True)
-audio_thread.start()
+    audio_thread = Thread(target=start_client, daemon=True)
+    audio_thread.start()
 
-while True:
-    window.refresh()
-    event, values = window.read()
-    
-    # If window is closed, break from main loop
-    if event == WIN_CLOSED:
-        window.close()
-        break
+    while True:
+        window.refresh()
+        event, values = window.read()
+        
+        # If window is closed, break from main loop
+        if event == WIN_CLOSED:
+            break
+finally:
+    window.close()
+

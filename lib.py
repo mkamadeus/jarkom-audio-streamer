@@ -18,18 +18,20 @@ def createPacket(type, data, fin = 0, seqnum = 0):
 
 # Split packet to retrieve its meta information
 def breakPacket(packet):
-    typ = packet[0]
-    seqnum = struct.unpack(">I", packet[5:9])
-    framerate = struct.unpack(">I", packet[9:13])
+    # typ = packet[0]
+    # seqnum = int(struct.unpack(">I", packet[5:9])[0])
+    # framerate = int(struct.unpack(">I", packet[9:13])[0])
+    typ, sampwidth, nchannel, framerate, = struct.unpack(">bIII", packet[:13])
 
     if(typ == 0x1): 
-        typ, sampwidth, nchannel, framerate, frame_count = struct.unpack(">bIIII", packet[:17])
+        frame_count = struct.unpack(">I", packet[13:17])[0]
         filename = packet[17:].decode()
         return "META", [sampwidth, nchannel, framerate, frame_count, filename] 
     elif(typ == 0x2):
         return "SUB", ""
     else:
+        seqnum = nchannel
         if(framerate == 1):
-            return "DATA1", (seqnum, packet[13:])
+            return "DATA1", [seqnum*1000, packet[13:]]
         else:
-            return "DATA", (seqnum, packet[13:])
+            return "DATA", [seqnum*1000, packet[13:]]

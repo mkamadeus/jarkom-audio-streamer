@@ -1,24 +1,25 @@
-import socket
 from typing import Tuple
+import socket
 import lib
 import time
 import pyaudio
 import queue
-from threading import Thread
+import traceback
+import logging
+
+logging.basicConfig(format='[%(asctime)s.%(msecs)03d] - %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
 
 
 # Function for initializing the socket
-def initialize_socket(time_limit=300) -> Tuple[socket.socket, queue.Queue, float]:
+def initialize_socket() -> Tuple[socket.socket, queue.Queue, float]:
 
     # Setup socket and timeout, using Datagram Sockets
+    logging.info('Setting up socket and packet queue')
     sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Initialize thread-safe queue
     q = queue.Queue()
-
-    # # Calculate timeout
-    # timeout = time.time() + time_limit
 
     return [sock, q]
 
@@ -28,21 +29,22 @@ def client_listener(sock: socket.socket, q: queue.Queue, time_limit: int = 300, 
     
     timeout = time.time() + time_limit
     while(time.time() <= timeout):
-        print("Listen for audio chunk")
+        logging.info("Listening for audio chunk")
         try:
             data, _ = sock.recvfrom(buff_size)
             typ, payload = lib.breakPacket(data)
 
 
             if(typ == "DATA"):
-                print('hehe')
+                logging.info(f"Received packet {payload[0]/1000}")
                 q.put(payload.copy())
             else:
-                print("tereter")
+                logging.info('FIN packet found')
                 q.put(payload.copy())
                 return
-        except:
-            print("error")
+
+        except Exception as e:
+            logging.error(traceback.format_exc())
 
 
 # Subscribe to a audio server
@@ -55,13 +57,13 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
     # [sampwidth, nchannel, framerate, frame_count, filename]
     wav_metadata = []
 
-    # Wait for META packet
+    # Wait for META (0x1) packet
     timeout = time.time() + time_limit
     while(time.time() <= timeout):
         # Send SUB (0x2) packet to server
         sock.sendto(subPacket, addr)
 
-        print("Waiting for META")
+        logging.info("Waiting for audio metadata")
         sock.settimeout(2)
         try:
             # Receive packet from server
@@ -70,13 +72,13 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
             
             # If received packet has type META (0x1)
             if(typ == "META"):
-                wav_metadata = data
+                wav_metadata = data.copy()
                 return wav_metadata
 
         except socket.timeout:
-            print("Timeout! Retrying...")
+            logging.info("Timeout!")
         except ConnectionResetError:
-            print("No receiver detected, resending packet")
+            logging.info("No receiver detected!")
             time.sleep(1)
 
 
@@ -98,11 +100,15 @@ def play_audio(sampwidth: int, nchannel: int, framerate: int, q: queue.Queue, fr
 
     # Stream audio
     while True:
-        print('tes')
         seq, chunk = q.get()
-        print(seq, chunk)
-        window['-LENGTH-'].update(f'{seq//framerate}/{frame_count//framerate}')
         stream.write(chunk)
         q.task_done()
+        
+        current_time = seq//framerate
+        current_time_string = "{:02d}:{:02d}".format(current_time//60,current_time%60)
+        max_time = frame_count//framerate
+        max_time_string = "{:02d}:{:02d}".format(max_time//60,max_time%60)
+        window['-LENGTH-'].update(f'{current_time_string}/{max_time_string}')
+        
 
 
