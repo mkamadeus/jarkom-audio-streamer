@@ -21,6 +21,9 @@ def serverListener(receiver, metaPacket):
                 print("sub baru nih")
                 receiver.sendto(metaPacket, addr)
                 subscribers.append(addr)
+            elif(typ == "ANC"):
+                print('hiyahiya flooded boi')
+                receiver.sendto(lib.createPacket("ANC", ""), addr)
 
         except:
             print("error")

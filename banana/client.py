@@ -1,4 +1,5 @@
-from typing import Tuple
+import os
+from typing import List, Tuple
 import socket
 import lib
 import time
@@ -6,6 +7,7 @@ import pyaudio
 import queue
 import traceback
 import logging
+from threading import Thread
 
 logging.basicConfig(format='[%(asctime)s.%(msecs)03d] - %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
 
@@ -48,9 +50,51 @@ def client_listener(sock: socket.socket, q: queue.Queue, time_limit: int = 300, 
         except Exception as e:
             logging.error(traceback.format_exc())
 
-
 # Subscribe to a audio server
 def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_limit: int = 300, buff_size=32774):
+    # Discover
+    port = addr[1]
+
+    new_addr : Tuple[str, int]
+
+    que = queue.Queue()
+
+    def discover(sock: socket.socket, ip: str, quee: queue.Queue):
+        nonlocal new_addr
+
+        try:
+            logging.debug(f'Sending to f{ip}')
+            name, _, _ = socket.gethostbyaddr(ip)
+            sock.sendto(lib.createPacket("ANC", ''), (name, port))
+            sock.settimeout(2)
+
+            fromreceiver, _ = sock.recvfrom(buff_size)
+            typ, _ = lib.breakPacket(fromreceiver)
+
+            if(typ == 'ANC'):
+                quee.put((name, port))
+                quee.task_done()
+        except Exception as e:
+            logging.debug(ip, e)
+            return
+    
+    discoverThread : List[Thread] = []
+    
+    logging.info('Discovering server...')
+    for i in range(256):
+        t = Thread(target=discover, args=(sock, f'192.168.0.{i}', que))
+        discoverThread.append(t)
+        t.start()
+
+    for t in discoverThread:
+        t.join()
+
+    if(que.empty()):
+        logging.info('No server was found')
+        exit()
+
+    new_addr = que.get()
+    logging.info(f'Server found at {new_addr[0]}:{new_addr[1]}')
 
     # Create subscription packet to server
     subPacket = lib.createPacket("SUB", "")
@@ -61,10 +105,10 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
 
     # Wait for META (0x1) packet
     timeout = time.time() + time_limit
-    logging.info(f'Getting information from {addr[0]}:{addr[1]}')
+    logging.info(f'Getting information from {new_addr[0]}:{new_addr[1]}')
     while(time.time() <= timeout):
         # Send SUB (0x2) packet to server
-        sock.sendto(subPacket, addr)
+        sock.sendto(subPacket, new_addr)
 
         logging.debug("Waiting for audio metadata")
         sock.settimeout(2)

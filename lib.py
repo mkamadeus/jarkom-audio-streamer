@@ -13,8 +13,10 @@ def createPacket(type, data, fin = 0, seqnum = 0):
         return (struct.pack(">bIIII", 0x1, data[0], data[1], data[2], data[3]) + bytes(data[4], 'utf-8'))
     elif(type == "SUB"):
         return (struct.pack(">bIII", 0x2, 0, 0, 0))
-    else:
+    elif(type == "DATA"):
         return (struct.pack(">bIII", 0x3, 0, seqnum, fin) + data)
+    elif(type=="ANC"):
+        return (struct.pack(">bIII", 0x4, 0, 0, 0))
 
 # Split packet to retrieve its meta information
 def breakPacket(packet):
@@ -29,9 +31,11 @@ def breakPacket(packet):
         return "META", [sampwidth, nchannel, framerate, frame_count, filename] 
     elif(typ == 0x2):
         return "SUB", ""
-    else:
+    elif(typ == 0x3):
         seqnum = nchannel
         if(framerate == 1):
             return "DATA1", [seqnum*1000, packet[13:]]
         else:
             return "DATA", [seqnum*1000, packet[13:]]
+    else:
+        return "ANC", ""
