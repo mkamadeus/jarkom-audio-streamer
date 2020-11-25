@@ -28,18 +28,20 @@ def initialize_socket() -> Tuple[socket.socket, queue.Queue, float]:
 def client_listener(sock: socket.socket, q: queue.Queue, time_limit: int = 300, buff_size: int = 32774):
     
     timeout = time.time() + time_limit
+    logging.info('Listening to server')
+
     while(time.time() <= timeout):
-        logging.info("Listening for audio chunk")
+        logging.debug("Listening for audio chunk")
         try:
             data, _ = sock.recvfrom(buff_size)
             typ, payload = lib.breakPacket(data)
 
 
             if(typ == "DATA"):
-                logging.info(f"Received packet {payload[0]/1000}")
+                logging.debug(f"Received packet {payload[0]//1000}")
                 q.put(payload.copy())
             else:
-                logging.info('FIN packet found')
+                logging.debug(f'FIN packet found at  {payload[0]//1000}')
                 q.put(payload.copy())
                 return
 
@@ -59,11 +61,12 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
 
     # Wait for META (0x1) packet
     timeout = time.time() + time_limit
+    logging.info(f'Getting information from {addr[0]}:{addr[1]}')
     while(time.time() <= timeout):
         # Send SUB (0x2) packet to server
         sock.sendto(subPacket, addr)
 
-        logging.info("Waiting for audio metadata")
+        logging.debug("Waiting for audio metadata")
         sock.settimeout(2)
         try:
             # Receive packet from server
@@ -72,13 +75,14 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
             
             # If received packet has type META (0x1)
             if(typ == "META"):
+                logging.debug('Metadata received')
                 wav_metadata = data.copy()
                 return wav_metadata
 
         except socket.timeout:
-            logging.info("Timeout!")
+            logging.warning("Timeout!")
         except ConnectionResetError:
-            logging.info("No receiver detected!")
+            logging.warning("No receiver detected!")
             time.sleep(1)
 
 
@@ -103,11 +107,12 @@ def play_audio(sampwidth: int, nchannel: int, framerate: int, q: queue.Queue, fr
         seq, chunk = q.get()
         stream.write(chunk)
         q.task_done()
-        
+
         current_time = seq//framerate
         current_time_string = "{:02d}:{:02d}".format(current_time//60,current_time%60)
         max_time = frame_count//framerate
         max_time_string = "{:02d}:{:02d}".format(max_time//60,max_time%60)
+
         window['-LENGTH-'].update(f'{current_time_string}/{max_time_string}')
         
 
