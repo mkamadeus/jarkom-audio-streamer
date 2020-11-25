@@ -58,7 +58,6 @@ while(run):
             sampwidth = data[0]
             nchannel = data[1]
             framerate = data[2]
-            print(framerate)
             run = False
             break
 

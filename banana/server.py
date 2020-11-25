@@ -30,7 +30,6 @@ def serverListener(receiver, metaPacket):
 
 
 def sendPacket(receiver, dataPacket, addr):
-
     receiver.sendto(dataPacket, addr)
 
 
@@ -80,9 +79,9 @@ for i in range(siz):
     # print("packet pengiriman ke ", i)
     dataPacket = b''
     if(i == siz - 1):
-        dataPacket = lib.createPacket("DATA", chunks[i], 1, seqnum=i)
+        dataPacket = lib.createPacket("DATA", chunks[i], 1)
     else:
-        dataPacket = lib.createPacket("DATA", chunks[i], seqnum=i)
+        dataPacket = lib.createPacket("DATA", chunks[i])
     for addr in subscribers:
         sendPacket(receiver, dataPacket, addr)
 
