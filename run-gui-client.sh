@@ -2,4 +2,4 @@
 
 source ./venv/bin/activate
 
-echo -e "$1\n$2\n" | python3 gui_test.py
+echo -e "$1\n$2\n" | python3 gui_client.py
