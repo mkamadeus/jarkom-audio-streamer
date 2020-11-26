@@ -51,7 +51,7 @@ receiver.bind(("", port))
 print(socket.gethostbyname(socket.gethostname()))
 
 # Open the WAV file
-wf = wave.open(filename, 'rb')
+wf = wave.open(f'./audio/{filename}', 'rb')
 
 
 metadata = [wf.getsampwidth(), wf.getnchannels(), wf.getframerate(),
