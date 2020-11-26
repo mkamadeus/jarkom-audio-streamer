@@ -12,6 +12,7 @@ timeout = time.time() + 60 * 5
 # Listener function for the server
 def serverListener(receiver, metaPacket):
 
+    print('listening...')
     while(True):
         try:
             message, addr = receiver.recvfrom(buffSize)
@@ -33,6 +34,7 @@ def serverListener(receiver, metaPacket):
 
 
 def sendPacket(receiver, dataPacket, addr):
+
     receiver.sendto(dataPacket, addr)
 
 
@@ -43,7 +45,8 @@ filename = input()
 # Open a socket connection and bind it to a port
 receiver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 receiver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-receiver.bind((socket.gethostbyname(socket.gethostname()), port))
+receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+receiver.bind(("", port))
 
 print(socket.gethostbyname(socket.gethostname()))
 
@@ -82,9 +85,9 @@ for i in range(siz):
     # print("packet pengiriman ke ", i)
     dataPacket = b''
     if(i == siz - 1):
-        dataPacket = lib.createPacket("DATA", chunks[i], 1)
+        dataPacket = lib.createPacket("DATA", chunks[i], 1, seqnum=i)
     else:
-        dataPacket = lib.createPacket("DATA", chunks[i])
+        dataPacket = lib.createPacket("DATA", chunks[i], seqnum=i)
     for addr in subscribers:
         sendPacket(receiver, dataPacket, addr)
 
