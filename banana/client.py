@@ -17,8 +17,10 @@ def initialize_socket() -> Tuple[socket.socket, queue.Queue, float]:
 
     # Setup socket and timeout, using Datagram Sockets
     logging.info('Setting up socket and packet queue')
-    sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM, proto=socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
 
     # Initialize thread-safe queue
     q = queue.Queue()
@@ -52,42 +54,31 @@ def client_listener(sock: socket.socket, q: queue.Queue, time_limit: int = 300, 
 
 # Subscribe to a audio server
 def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_limit: int = 300, buff_size=32774):
-    # Discover
-    port = addr[1]
 
+    # Get port from adress
+    port = addr[1]
     new_addr : Tuple[str, int]
 
+    # Autodiscover using broadcast
     que = queue.Queue()
-
-    def discover(sock: socket.socket, ip: str, quee: queue.Queue):
-        nonlocal new_addr
-
+    discovered = False
+    while not discovered:
         try:
-            logging.debug(f'Sending to f{ip}')
-            name, _, _ = socket.gethostbyaddr(ip)
-            sock.sendto(lib.createPacket("ANC", ''), (name, port))
-            sock.settimeout(2)
+            sock.sendto(lib.createPacket("ANC", ''), ('<broadcast>', port))
+            sock.settimeout(0.2)
+            logging.info(f'Broadcasted packet to port {port}')
 
-            fromreceiver, _ = sock.recvfrom(buff_size)
+            fromreceiver, ad = sock.recvfrom(buff_size)
             typ, _ = lib.breakPacket(fromreceiver)
+            discovered = True
+            logging.info(f'Received from {ad[0]}')
 
             if(typ == 'ANC'):
-                quee.put((name, port))
-                quee.task_done()
+                que.put(ad)
+                que.task_done()
         except Exception as e:
-            logging.debug(ip, e)
-            return
-    
-    discoverThread : List[Thread] = []
-    
-    logging.info('Discovering server...')
-    for i in range(256):
-        t = Thread(target=discover, args=(sock, f'192.168.0.{i}', que))
-        discoverThread.append(t)
-        t.start()
-
-    for t in discoverThread:
-        t.join()
+            print(e)
+            pass
 
     if(que.empty()):
         logging.info('No server was found')
@@ -99,8 +90,7 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
     # Create subscription packet to server
     subPacket = lib.createPacket("SUB", "")
 
-    # WAV related data
-    # [sampwidth, nchannel, framerate, frame_count, filename]
+    # WAV related data [sampwidth, nchannel, framerate, frame_count, filename]
     wav_metadata = []
 
     # Wait for META (0x1) packet

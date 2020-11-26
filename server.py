@@ -12,6 +12,7 @@ timeout = time.time() + 60 * 5
 # Listener function for the server
 def serverListener(receiver, metaPacket):
 
+    print('listening...')
     while(True):
         try:
             message, addr = receiver.recvfrom(buffSize)
@@ -44,7 +45,8 @@ filename = input()
 # Open a socket connection and bind it to a port
 receiver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 receiver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-receiver.bind((socket.gethostbyname(socket.gethostname()), port))
+receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+receiver.bind(("", port))
 
 print(socket.gethostbyname(socket.gethostname()))
 
