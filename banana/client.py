@@ -53,7 +53,7 @@ def client_listener(sock: socket.socket, q: queue.Queue, time_limit: int = 300, 
             logging.error(traceback.format_exc())
 
 # Subscribe to a audio server
-def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_limit: int = 300, buff_size=32774):
+def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, qChoice: int, time_limit: int = 300, buff_size=32774):
 
     # Get port from adress
     port = addr[1]
@@ -88,7 +88,7 @@ def subscribe(addr: Tuple[str, int], sock: socket.socket, q: queue.Queue, time_l
     logging.info(f'Server found at {new_addr[0]}:{new_addr[1]}')
 
     # Create subscription packet to server
-    subPacket = lib.createPacket("SUB", "")
+    subPacket = lib.createPacket("SUB", bytes([qChoice]))
 
     # WAV related data [sampwidth, nchannel, framerate, frame_count, filename]
     wav_metadata = []

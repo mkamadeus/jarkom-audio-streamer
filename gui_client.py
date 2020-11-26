@@ -7,6 +7,10 @@ from banana.client import client_listener, initialize_socket, play_audio, subscr
 sampwidth, nchannel, framerate, frame_count, filename = 0, 0, 0, 0, ''
 ip_address = input()
 port = int(input())
+quality = input()
+qChoice = 2
+if(quality == 'low'):
+    qChoice = 1
 addr = (ip_address, port)
 
 def start_client():
@@ -15,7 +19,7 @@ def start_client():
     global window
 
     sock, q = initialize_socket()
-    sampwidth, nchannel, framerate, frame_count, filename = subscribe(addr, sock, q)
+    sampwidth, nchannel, framerate, frame_count, filename = subscribe(addr, sock, q, qChoice)
 
     window['-FILENAME-'].update(filename)
     window['-LENGTH-'].update('Loading...')
